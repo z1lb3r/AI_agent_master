@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>zAI - Интеллектуальная система мастер-агента</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <span class="z">z</span><span class="ai">AI</span>
+                </div>
+                <div class="logo-text">Интеллектуальная система мастер-агента</div>
+            </div>
+            <div class="actions">
+                <button id="tools-btn" class="btn btn-secondary" title="Показать доступные инструменты">
+                    <i class="fas fa-toolbox"></i>
+                </button>
+                <button id="clear-btn" class="btn btn-secondary" title="Очистить историю чата">
+                    <i class="fas fa-broom"></i>
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <div class="chat-container">
+                <div id="chat-messages" class="chat-messages">
+                    <div class="message system">
+                        <div class="message-content">
+                            <p>Добро пожаловать в систему zAI!</p>
+                            <p>Я - мастер-агент, координирующий работу специализированных AI-агентов. Чем я могу вам помочь сегодня?</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-input-container">
+                    <textarea id="chat-input" placeholder="Введите ваш запрос..." rows="1"></textarea>
+                    <button id="send-btn" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+        
+        <div id="tools-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Доступные инструменты</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="tools-list" class="tools-list">
+                        <div class="loading">Загрузка инструментов...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
