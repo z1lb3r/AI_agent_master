@@ -21,6 +21,8 @@ from tools.registry import get_all_tools
 from tools.master_tools import get_available_tools, get_system_status, classify_user_query, lookup_information
 from tools.general_tools import chat_with_model
 
+from tools.search_tools import search_google  # Импортируем новый инструмент поиска
+
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
