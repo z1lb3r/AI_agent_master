@@ -87,10 +87,13 @@ def classify_user_query(query: str) -> str:
     # возможно с использованием NLP или ML
     
     keywords = {
-        "investment": ["инвестиции", "акции", "портфель", "торговля", "биржа", "финансы", "отчет", "сделка", 
-                      "доходность", "дивиденды", "фонд", "трейдинг", "опцион", "фьючерс"],
+        "investment": ["агент по инвестициям", "агенту по инвестициям", "агента по инвестициям", 
+                      "агентом по инвестициям", "инвестиционный агент", "инвестиционному агенту", 
+                      "инвестиционного агента"],
         "general": ["помощь", "информация", "вопрос", "объяснение", "рассказать", "посоветуй", "мнение", 
                     "что такое", "как сделать", "почему", "когда", "где", "кто", "зачем"],
+        "search": ["найди", "поиск", "поищи", "загугли", "найти информацию", "информация о", "данные о",
+                   "посмотри в интернете", "что говорит гугл", "найти в интернете"],
         "direct_model": ["думаешь", "считаешь", "напиши", "сгенерируй", "придумай", "сочини", "создай текст", 
                          "твое мнение", "твоя оценка", "творческий", "креативный", "история", "стихотворение"],
         "system": ["статус", "инструменты", "функции", "возможности", "агенты", "система", "настройки"]
@@ -115,6 +118,8 @@ def classify_user_query(query: str) -> str:
     recommended_tool = None
     if max_category == "direct_model" or max_category == "general":
         recommended_tool = "chat_with_model"
+    elif max_category == "search":
+        recommended_tool = "search_google"
     elif max_category == "system":
         if "статус" in query_lower:
             recommended_tool = "get_system_status"
@@ -123,8 +128,7 @@ def classify_user_query(query: str) -> str:
         else:
             recommended_tool = "lookup_information"
     elif max_category == "investment":
-        # Здесь будет логика выбора инструмента инвестиционного агента
-        recommended_tool = "Инвестиционный инструмент (будет определен позже)"
+        recommended_tool = "ask_investment_agent"
     
     result = {
         "query": query,

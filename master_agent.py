@@ -15,13 +15,13 @@ from utils.helpers import safe_parse_json
 
 from config import OPENAI_API_KEY, DEFAULT_MODEL, DEFAULT_TEMPERATURE
 from prompts.master_prompt import MASTER_PROMPT
-from tools.registry import get_all_tools
 
 # Импортируем инструменты для регистрации
+from tools.registry import get_all_tools
 from tools.master_tools import get_available_tools, get_system_status, classify_user_query, lookup_information
 from tools.general_tools import chat_with_model
-
 from tools.search_tools import search_google  # Импортируем новый инструмент поиска
+from tools.investment_connector import ask_investment_agent
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, 
@@ -101,6 +101,7 @@ class MasterAgent:
                 )
             
             output = response.final_output
+            logger.debug(f"Raw final output: {output[:200]}")  # Логирование для отладки
             
             # Обработка потенциальных JSON-ответов от инструментов
             try:
