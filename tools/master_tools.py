@@ -128,7 +128,8 @@ def classify_user_query(query: str) -> str:
         else:
             recommended_tool = "lookup_information"
     elif max_category == "investment":
-        recommended_tool = "ask_investment_agent"
+        recommended_tool = "ask_specialized_agent"
+        result["recommended_agent"] = "investment_agent"
     
     result = {
         "query": query,

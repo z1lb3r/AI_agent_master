@@ -21,7 +21,7 @@ from tools.registry import get_all_tools
 from tools.master_tools import get_available_tools, get_system_status, classify_user_query, lookup_information
 from tools.general_tools import chat_with_model
 from tools.search_tools import search_google  # Импортируем новый инструмент поиска
-from tools.investment_agent_connector import ask_investment_agent
+from tools.agent_framework import ask_specialized_agent
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, 
