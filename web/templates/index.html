@@ -42,9 +42,18 @@
                 
                 <div class="chat-input-container">
                     <textarea id="chat-input" placeholder="Введите ваш запрос..." rows="1"></textarea>
-                    <button id="send-btn" class="btn btn-primary">
+                    <button id="voice-btn" class="btn btn-secondary" title="Голосовой ввод">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <button id="send-btn" class="btn btn-primary" title="Отправить">
                         <i class="fas fa-paper-plane"></i>
                     </button>
+                </div>
+                <div class="voice-settings">
+                    <label class="voice-toggle">
+                        <input type="checkbox" id="voice-response-toggle">
+                        <span class="toggle-label">Голосовые ответы</span>
+                    </label>
                 </div>
             </div>
         </main>

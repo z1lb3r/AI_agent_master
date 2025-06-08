@@ -4,12 +4,17 @@ const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
 const toolsBtn = document.getElementById('tools-btn');
 const clearBtn = document.getElementById('clear-btn');
+const voiceBtn = document.getElementById('voice-btn');
+const voiceResponseToggle = document.getElementById('voice-response-toggle');
 const toolsModal = document.getElementById('tools-modal');
 const toolsList = document.getElementById('tools-list');
 const closeBtn = document.querySelector('.close');
 
 // State
 let isWaitingForResponse = false;
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
@@ -44,6 +49,23 @@ document.addEventListener('DOMContentLoaded', () => {
             toolsModal.style.display = 'none';
         }
     });
+    
+    // Voice recording handler - toggle mode
+    voiceBtn.addEventListener('click', toggleRecording);
+    
+    // For mobile devices
+    voiceBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // Prevent default touch behavior
+    });
+    
+    voiceBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        if (!e.cancelable) return; // Ignore if event is not cancelable
+        toggleRecording();
+    });
+    
+    // Voice response toggle
+    voiceResponseToggle.addEventListener('change', toggleVoiceResponse);
     
     // Scroll to bottom on load
     scrollToBottom();
@@ -90,6 +112,11 @@ function sendMessage() {
             addMessageToChat('system', `Произошла ошибка: ${data.error}`);
         } else {
             addMessageToChat('assistant', data.response);
+            
+            // If there's audio response, play it
+            if (data.audio) {
+                playAudioResponse(data.audio);
+            }
         }
     })
     .catch(error => {
@@ -132,6 +159,8 @@ function addMessageToChat(role, content) {
     
     // Scroll to the bottom
     scrollToBottom();
+    
+    return messageDiv;
 }
 
 function showTypingIndicator() {
@@ -254,4 +283,188 @@ function clearChatHistory() {
             addMessageToChat('system', `Ошибка при очистке истории: ${error.message}`);
         });
     }
+}
+
+// Toggle recording on/off
+function toggleRecording() {
+    if (isRecording) {
+        stopRecording();
+    } else {
+        startRecording();
+    }
+}
+
+// Voice functions
+function startRecording() {
+    if (isRecording) return;
+    
+    // Check if MediaRecorder is supported
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        addMessageToChat('system', 'Ваш браузер не поддерживает запись аудио. Пожалуйста, обновите браузер или используйте текстовый ввод.');
+        return;
+    }
+    
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            // Change button appearance
+            voiceBtn.classList.add('recording');
+            voiceBtn.querySelector('i').className = 'fas fa-stop';
+            
+            // Initialize MediaRecorder
+            try {
+                // Try to create MediaRecorder with specific options
+                const options = { mimeType: 'audio/webm' };
+                mediaRecorder = new MediaRecorder(stream, options);
+            } catch (e) {
+                console.error('Failed to create MediaRecorder with specified options, trying default', e);
+                try {
+                    // Try with default options
+                    mediaRecorder = new MediaRecorder(stream);
+                } catch (e) {
+                    console.error('Failed to create MediaRecorder', e);
+                    addMessageToChat('system', 'Не удалось инициализировать запись. Пожалуйста, используйте текстовый ввод.');
+                    return;
+                }
+            }
+            
+            // Collect audio chunks
+            audioChunks = [];
+            mediaRecorder.addEventListener('dataavailable', event => {
+                if (event.data.size > 0) {
+                    audioChunks.push(event.data);
+                }
+            });
+            
+            // Request data frequently to ensure we get something
+            mediaRecorder.start(100); // Get data every 100ms
+            isRecording = true;
+            
+            // Handle recording stop
+            mediaRecorder.addEventListener('stop', () => {
+                // Stop all tracks in the stream
+                stream.getTracks().forEach(track => track.stop());
+                
+                // Check if we have any audio data
+                if (audioChunks.length === 0 || audioChunks.every(chunk => chunk.size === 0)) {
+                    console.error('No audio data collected');
+                    addMessageToChat('system', 'Не удалось записать аудио. Пожалуйста, попробуйте еще раз или используйте текстовый ввод.');
+                    return;
+                }
+                
+                // Create Blob from collected chunks
+                const audioBlob = new Blob(audioChunks);
+                
+                // Debug
+                console.log('Audio size:', audioBlob.size, 'bytes');
+                console.log('Audio type:', audioBlob.type);
+                
+                // Show processing indicator
+                showTypingIndicator();
+                
+                // Send audio to server
+                const formData = new FormData();
+                
+                // Use the correct MIME type
+                const mimeType = audioBlob.type || 'audio/webm';
+                const extension = mimeType.includes('webm') ? 'webm' : 
+                                 mimeType.includes('mp4') ? 'mp4' : 
+                                 mimeType.includes('ogg') ? 'ogg' : 'webm';
+                
+                formData.append('audio', audioBlob, `recording.${extension}`);
+                
+                fetch('/api/voice-chat', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Remove loading indicator
+                    removeTypingIndicator();
+                    
+                    // Add recognized text to chat
+                    if (data.text) {
+                        addMessageToChat('user', data.text);
+                    }
+                    
+                    // Add response to chat
+                    addMessageToChat('assistant', data.response);
+                    
+                    // If there's audio response, play it
+                    if (data.audio) {
+                        playAudioResponse(data.audio);
+                    }
+                })
+                .catch(error => {
+                    removeTypingIndicator();
+                    addMessageToChat('system', `Ошибка обработки голосового запроса: ${error.message}`);
+                });
+            });
+        })
+        .catch(error => {
+            console.error('Ошибка доступа к микрофону:', error);
+            addMessageToChat('system', 'Не удалось получить доступ к микрофону. Пожалуйста, проверьте разрешения браузера.');
+        });
+}
+
+function stopRecording() {
+    if (!isRecording || !mediaRecorder) return;
+    
+    // Change button appearance
+    voiceBtn.classList.remove('recording');
+    voiceBtn.querySelector('i').className = 'fas fa-microphone';
+    
+    // Stop recording
+    mediaRecorder.stop();
+    isRecording = false;
+}
+
+function toggleVoiceResponse() {
+    const enabled = voiceResponseToggle.checked;
+    
+    fetch('/api/toggle-voice-response', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ enabled })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            console.log(`Голосовые ответы ${enabled ? 'включены' : 'выключены'}`);
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка переключения голосовых ответов:', error);
+    });
+}
+
+function playAudioResponse(base64Audio) {
+    // Create container for audio player
+    const audioContainer = document.createElement('div');
+    audioContainer.className = 'audio-player';
+    
+    // Create audio element
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    
+    // Set audio source
+    const source = `data:audio/mp3;base64,${base64Audio}`;
+    audio.src = source;
+    
+    // Add audio to container
+    audioContainer.appendChild(audio);
+    
+    // Find the last message from assistant
+    const messages = document.querySelectorAll('.message.assistant');
+    const lastMessage = messages[messages.length - 1];
+    
+    if (lastMessage) {
+        lastMessage.appendChild(audioContainer);
+    }
+    
+    // Auto-play audio
+    audio.play().catch(error => {
+        console.error('Ошибка автоматического воспроизведения:', error);
+    });
 }

@@ -1,28 +1,48 @@
-"""
-Конфигурация проекта zAI.
-"""
+""" Configuration settings for the Investment AI Agent. """
 
 import os
+from dotenv import load_dotenv
 
-# API ключи
-# Проверяем наличие API ключа в переменных окружения, иначе используем ключ из файла
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "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")
+# Загружаем переменные окружения из .env файла
+load_dotenv()
 
-# Настройки модели
-DEFAULT_MODEL = "gpt-4o"  # или другая модель
-DEFAULT_TEMPERATURE = 0.2
+# OpenAI API credentials
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise ValueError("OPENAI_API_KEY не найден в переменных окружения")
 
-# Настройки веб-сервера
-PORT = 5000
-HOST = '0.0.0.0'
-DEBUG = True
+# SEC API settings
+SEC_API_KEY = os.getenv("SEC_API_KEY")
+if not SEC_API_KEY:
+    raise ValueError("SEC_API_KEY не найден в переменных окружения")
 
-# Пути к ресурсам
-RESOURCES_PATH = "./resources"
+SEC_EDGAR_USER_AGENT = os.getenv("SEC_EDGAR_USER_AGENT", "InvestmentAIAgent default@example.com")
 
-# Логирование
-LOG_LEVEL = "INFO"
-LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+# Model settings
+DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4o-mini")
+DEFAULT_TEMPERATURE = float(os.getenv("DEFAULT_TEMPERATURE", "0.2"))
+MAX_TOKENS = int(os.getenv("MAX_TOKENS", "4000"))
 
-# Добавим в config.py
-SERPAPI_KEY = "3f8be09f2b1d53774061335e1303b9494d5c4b79941ece65a531b010f051b087"
+# API request parameters
+REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "30"))  # Timeout for API requests in seconds
+MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))  # Maximum number of retries for API requests
+RETRY_DELAY = int(os.getenv("RETRY_DELAY", "1"))  # Initial delay between retries in seconds
+RATE_LIMIT_DELAY = int(os.getenv("RATE_LIMIT_DELAY", "5"))  # Delay when hitting rate limits in seconds
+
+# Other configuration parameters
+CACHE_EXPIRY = int(os.getenv("CACHE_EXPIRY", "3600"))  # Cache expiry time in seconds (1 hour)
+
+# Дополнительная проверка критически важных переменных
+def validate_config():
+    """Проверяет, что все критически важные переменные заданы."""
+    required_vars = ["OPENAI_API_KEY", "SEC_API_KEY"]
+    missing_vars = [var for var in required_vars if not globals().get(var)]
+    
+    if missing_vars:
+        raise ValueError(f"Отсутствуют обязательные переменные окружения: {', '.join(missing_vars)}")
+    
+    print("✅ Конфигурация проверена успешно")
+
+# Выполняем проверку при импорте модуля
+if __name__ != "__main__":
+    validate_config()
